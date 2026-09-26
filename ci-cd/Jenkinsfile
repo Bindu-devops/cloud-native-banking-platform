@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'cloud-native-banking-platform'
+        IMAGE_TAG = '1.0'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    python -m pip install --upgrade pip
+                    pip install -r application/requirements.txt
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    pytest application/tests
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build -f docker/Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'CI pipeline failed. Check the stage logs.'
+        }
+    }
+}
